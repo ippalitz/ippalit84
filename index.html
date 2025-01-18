@@ -17,7 +17,45 @@
             background-repeat: no-repeat;
             background-attachment: fixed;
         }
-        header, nav, .container, .cta, footer {
+        header {
+            text-align: center;
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            border-radius: 10px;
+            margin: 20px auto;
+        }
+        nav {
+            margin-top: 15px;
+        }
+        #menuToggle {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        #menuItems {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        #menuItems a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            text-transform: uppercase;
+            padding: 8px 15px;
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.1);
+            transition: background-color 0.3s ease;
+        }
+        #menuItems a:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+        .container {
             background-color: rgba(0, 0, 0, 0.7);
             color: white;
             margin: 20px auto;
@@ -25,71 +63,50 @@
             border-radius: 10px;
             text-align: center;
         }
-        nav a {
+        footer {
+            background-color: rgba(0, 0, 0, 0.7);
             color: white;
-            margin: 0 15px;
-            text-decoration: none;
-            font-weight: bold;
-            text-transform: uppercase;
+            padding: 10px;
+            text-align: center;
+            border-radius: 10px;
+            margin-top: 20px;
         }
-        nav a:hover {
-            text-decoration: underline;
-        }
-        .container h2 {
-            font-size: 2rem;
-            margin-bottom: 20px;
-        }
-        .form-group input, .form-group textarea, .form-group button {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            font-size: 1rem;
-            margin-bottom: 15px;
-        }
-        footer p {
-            font-size: 1.1rem;
-        }
-        .cta a {
-            color: white;
-            background-color: #333;
-            padding: 10px 20px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: bold;
-            transition: background-color 0.3s ease;
-        }
-        .cta a:hover {
-            background-color: #555;
-        }
-        a {
-            color: white; /* Белый цвет ссылок */
-        }
-        a:hover {
-            color: #ddd;
-        }
-        .fas {
-            color: yellow; /* Желтый цвет иконок */
+
+        @media (max-width: 768px) {
+            #menuToggle {
+                display: inline-block;
+            }
+            #menuItems {
+                display: none;
+                flex-direction: column;
+                gap: 10px;
+                align-items: center;
+            }
+            #menuItems a {
+                width: 100%;
+                text-align: center;
+                padding: 10px 20px;
+            }
         }
     </style>
 </head>
 <body>
     <header>
-    <h1>IPPALIT</h1>
-    <p>Поиск и подбор автозапчастей быстро и надёжно</p>
-    <nav>
-        <button id="menuToggle">☰</button>
-        <div id="menuItems">
-            <a href="#about">О нас</a>
-            <a href="#services">Наши услуги</a>
-            <a href="#osago">Оформление ОСАГО</a>
-            <a href="#DKP">Оформление ДКП</a>
-            <a href="#request">Оставить заявку</a>
-            <a href="#reviews">Отзывы</a>
-            <a href="#contacts">Контакты</a>
-        </div>
-    </nav>
-</header>
+        <h1>IPPALIT</h1>
+        <p>Поиск и подбор автозапчастей быстро и надёжно</p>
+        <nav>
+            <button id="menuToggle">☰</button>
+            <div id="menuItems">
+                <a href="#about">О нас</a>
+                <a href="#services">Наши услуги</a>
+                <a href="#osago">Оформление ОСАГО</a>
+                <a href="#DKP">Оформление ДКП</a>
+                <a href="#request">Оставить заявку</a>
+                <a href="#reviews">Отзывы</a>
+                <a href="#contacts">Контакты</a>
+            </div>
+        </nav>
+    </header>
 
     <div class="container" id="about">
         <h2>О нас</h2>
@@ -107,13 +124,14 @@
         <h2>Оформление ОСАГО</h2>
         <p>Быстрое и удобное оформление ОСАГО прямо на нашем сайте. Воспользуйтесь специальным виджетом ниже:</p>
         <polis-online-widget-osago name="polis-online-widget-osago" data-api-key="38k2BUmsCg" data-widget-id=47353></polis-online-widget-osago>
-<script src='https://agents.polis.online/widget_v2.min.js'></script>
+        <script src='https://agents.polis.online/widget_v2.min.js'></script>
     </div>
-   
+
     <div class="container" id="DKP">
         <h2>Оформление ДКП</h2>
         <polis-online-widget-dkp name="polis-online-widget-dkp" data-api-key="38k2BUmsCg" data-widget-id=47381></polis-online-widget-dkp>
-<script src='https://agents.polis.online/widget_dkp_v2.min.js'></script>
+        <script src='https://agents.polis.online/widget_dkp_v2.min.js'></script>
+    </div>
 
     <div class="cta">
         <h2>Акция!</h2>
@@ -141,10 +159,10 @@
     <div class="container" id="contacts">
         <h2>Контакты</h2>
         <ul>
-            <strong>Пункт выдачи: 
-            <li><strong>д.Дудчино улица Строителей - 3, Новая Каховка <li>         
+            <strong>Пункт выдачи:</strong>
+            <li><strong>д.Дудчино улица Строителей - 3, Новая Каховка</li>
             <strong>Татьяна</strong> <a href="tel:+79901744516">+7 (990) 174-45-16</a></li>
-            <strong>Менеджер IPPALIT: 
+            <strong>Менеджер IPPALIT:</strong>
             <li><strong>Telegram:</strong> <a href="https://t.me/ippalitzapchasti">@ippalitzapchasti</a></li>
         </ul>
     </div>
@@ -152,5 +170,14 @@
     <footer>
         <p>&copy; 2025 IPPALIT. Все права защищены.</p>
     </footer>
+
+    <script>
+        // Скрипт для управления видимостью меню
+        document.getElementById('menuToggle').addEventListener('click', function () {
+            const menu = document.getElementById('menuItems');
+            const isMenuVisible = menu.style.display === 'flex';
+            menu.style.display = isMenuVisible ? 'none' : 'flex';
+        });
+    </script>
 </body>
 </html>
