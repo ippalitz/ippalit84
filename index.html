@@ -42,9 +42,20 @@
             flex-wrap: wrap;
             gap: 10px;
         }
+        /* Общие стили для всех ссылок */
+        a {
+            color: white; /* Белый цвет ссылок */
+            text-decoration: none; /* Убирает подчеркивание */
+        }
+
+        /* Стили для ссылок при наведении */
+        a:hover {
+            color: #ddd; /* Светлый цвет при наведении */
+            text-decoration: underline; /* Подчеркивание при наведении */
+        }
+
+        /* Стили для ссылок в меню */
         #menuItems a {
-            color: white;
-            text-decoration: none;
             font-weight: bold;
             text-transform: uppercase;
             padding: 8px 15px;
@@ -53,8 +64,9 @@
             transition: background-color 0.3s ease;
         }
         #menuItems a:hover {
-            background-color: rgba(255, 255, 255, 0.3);
+            background-color: rgba(255, 255, 255, 0.3); /* Цвет фона при наведении на ссылку в меню */
         }
+
         .container {
             background-color: rgba(0, 0, 0, 0.7);
             color: white;
