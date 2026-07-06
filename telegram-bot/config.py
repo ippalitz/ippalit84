@@ -29,3 +29,7 @@ PURCHASES_CSV_PATH = Path(os.getenv("PURCHASES_CSV_PATH", str(DATA_DIR / "purcha
 GOOGLE_SHEETS_ENABLED = os.getenv("GOOGLE_SHEETS_ENABLED", "0").lower() in {"1", "true", "yes"}
 GOOGLE_SHEET_ID = os.getenv("GOOGLE_SHEET_ID", "")
 GOOGLE_SERVICE_ACCOUNT_JSON = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON", "")
+
+WEBHOOK_URL = os.getenv("WEBHOOK_URL", "").rstrip("/")
+WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "telegram-webhook")
+PORT = int(os.getenv("PORT", "10000"))
