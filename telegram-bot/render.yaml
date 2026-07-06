@@ -1,0 +1,30 @@
+services:
+  - type: worker
+    name: ippalit-zapchasty-bot
+    env: python
+    plan: starter
+    rootDir: telegram-bot
+    buildCommand: pip install -r requirements.txt
+    startCommand: python bot.py
+    autoDeploy: true
+    envVars:
+      - key: TELEGRAM_TOKEN
+        sync: false
+      - key: MANAGER_CHAT_ID
+        sync: false
+      - key: ADEO_LOGIN
+        sync: false
+      - key: ADEO_PASSWORD
+        sync: false
+      - key: ADEO_URL_PRICES
+        value: https://xml.adeo.pro/pricedetails2.php
+      - key: MARKUP_PERCENT
+        value: "30"
+      - key: MAX_OFFERS_PER_QUERY
+        value: "5"
+      - key: GOOGLE_SHEETS_ENABLED
+        value: "0"
+      - key: GOOGLE_SHEET_ID
+        sync: false
+      - key: GOOGLE_SERVICE_ACCOUNT_JSON
+        sync: false
