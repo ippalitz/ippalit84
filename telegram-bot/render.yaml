@@ -1,12 +1,11 @@
 services:
-  - type: worker
+  - type: web
     name: ippalit-zapchasty-bot
-    env: python
-    plan: starter
+    env: docker
+    plan: free
     rootDir: telegram-bot
-    buildCommand: pip install -r requirements.txt
-    startCommand: python bot.py
     autoDeploy: true
+    healthCheckPath: /
     envVars:
       - key: TELEGRAM_TOKEN
         sync: false
@@ -22,6 +21,10 @@ services:
         value: "30"
       - key: MAX_OFFERS_PER_QUERY
         value: "5"
+      - key: WEBHOOK_URL
+        sync: false
+      - key: WEBHOOK_SECRET
+        generateValue: true
       - key: GOOGLE_SHEETS_ENABLED
         value: "0"
       - key: GOOGLE_SHEET_ID
