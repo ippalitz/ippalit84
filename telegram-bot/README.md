@@ -13,23 +13,11 @@
 - Уведомляет менеджера в Telegram.
 - Опционально пишет заявки и покупки в Google Sheets.
 
-## Сценарий 1: клиент знает OEM
+## Бесплатная архитектура
 
-1. Клиент отправляет номер детали/OEM.
-2. Бот запрашивает Adeo API.
-3. Бот показывает предложения и кнопку `Купить`.
-4. После покупки заявка сохраняется и менеджер получает уведомление.
+Для бесплатного Render используется Web Service + Telegram webhook. Telegram отправляет сообщения на HTTPS-адрес сервиса, поэтому не нужен платный Background Worker.
 
-## Сценарий 2: клиент не знает OEM
-
-1. Клиент нажимает `Не знаю номер детали`.
-2. Бот спрашивает VIN, авто, деталь, город и телефон.
-3. Заявка сохраняется.
-4. Менеджер получает уведомление: нужно подобрать OEM.
-5. Менеджер передает номер клиенту.
-6. Клиент отправляет номер боту, дальше работает проверка Adeo.
-
-Бот не подбирает OEM по VIN самостоятельно. VIN нужен менеджеру.
+Важно: free-план Render может засыпать после простоя. Telegram webhook разбудит сервис, но первый ответ после сна может идти с задержкой.
 
 ## Переменные окружения
 
@@ -41,6 +29,8 @@ MANAGER_CHAT_ID=telegram_id_менеджера
 ADEO_LOGIN=логин_adeo
 ADEO_PASSWORD=пароль_adeo
 ADEO_URL_PRICES=https://xml.adeo.pro/pricedetails2.php
+WEBHOOK_URL=https://your-render-service.onrender.com
+WEBHOOK_SECRET=любая_секретная_строка
 ```
 
 Опциональные:
@@ -53,23 +43,26 @@ GOOGLE_SHEET_ID=
 GOOGLE_SERVICE_ACCOUNT_JSON=
 ```
 
-## Локальный запуск
+## Локальный запуск для теста
 
 ```bash
 pip install -r requirements.txt
 python bot.py
 ```
 
-## Деплой 24/7 на Render
+## Бесплатный деплой на Render
 
-1. Создайте новый Worker в Render из репозитория `ippalitz/ippalit84`.
-2. Root Directory: `telegram-bot`.
-3. Build Command: `pip install -r requirements.txt`.
-4. Start Command: `python bot.py`.
-5. Добавьте переменные окружения из `.env.example`.
-6. Запустите сервис.
-
-Для Blueprint можно использовать `telegram-bot/render.yaml`.
+1. Создайте `New` -> `Web Service`.
+2. Выберите репозиторий `ippalitz/ippalit84`.
+3. Root Directory: `telegram-bot`.
+4. Runtime: Docker.
+5. Plan: Free.
+6. Добавьте переменные окружения из `.env.example`.
+7. Создайте сервис.
+8. После создания скопируйте URL сервиса Render.
+9. Добавьте/обновите `WEBHOOK_URL` этим URL.
+10. Перезапустите сервис.
+11. В логах должно быть `Telegram webhook configured`.
 
 ## Проверка
 
