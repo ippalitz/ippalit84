@@ -4,6 +4,7 @@ from typing import Any
 import telebot
 from telebot import types
 
+from ai_manager import ask_ai, is_enabled as ai_is_enabled
 from api import search_article
 from config import MANAGER_CHAT_ID, MANAGER_CHAT_ID_FILE, MAX_OFFERS_PER_QUERY, TELEGRAM_TOKEN
 from request_parser import extract_oems
@@ -13,6 +14,8 @@ bot = telebot.TeleBot(TELEGRAM_TOKEN, parse_mode="HTML")
 
 USER_STATES: dict[int, dict[str, Any]] = {}
 OFFERS_CACHE: dict[str, dict[str, Any]] = {}
+AI_CONVERSATIONS: dict[int, list[dict[str, str]]] = {}
+AI_CONSENT: set[int] = set()
 
 LEAD_STEPS = [
     ("vin", "Укажите VIN автомобиля."),
@@ -39,6 +42,7 @@ def main_keyboard() -> types.ReplyKeyboardMarkup:
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
     keyboard.row("Проверить по номеру/OEM")
     keyboard.row("Не знаю номер детали")
+    keyboard.row("Подключить ИИ-менеджера")
     return keyboard
 
 
@@ -52,13 +56,15 @@ def start_text() -> str:
     return (
         "Здравствуйте! Я помогу проверить наличие автозапчастей.\n\n"
         "Если вы знаете номер детали/OEM, отправьте его сюда, и я проверю актуальное наличие в Adeo.\n\n"
-        "Если номер неизвестен, нажмите «Не знаю номер детали» — я соберу данные для менеджера."
+        "Если номер неизвестен, нажмите «Не знаю номер детали» — я соберу данные для менеджера.\n\n"
+        "ИИ-менеджер может анализировать текст и фотографии только после вашего отдельного согласия."
     )
 
 
 @bot.message_handler(commands=["start", "help"])
 def start(message):
     USER_STATES.pop(message.chat.id, None)
+    AI_CONVERSATIONS.pop(message.chat.id, None)
     remember_manager_chat(message.chat.id)
     bot.send_message(message.chat.id, start_text(), reply_markup=main_keyboard())
 
@@ -88,15 +94,13 @@ def cancel_lead(message):
 def format_offer(offer: dict[str, Any], index: int) -> str:
     title = " ".join(filter(None, [offer.get("producer"), offer.get("code")]))
     delivery = offer.get("delivery") or offer.get("deliverydays") or "уточняется"
-    stock = offer.get("stock") or offer.get("region") or "уточняется"
     return (
         f"<b>{index}. {safe(title)}</b>\n"
         f"{safe(offer.get('caption'))}\n"
         f"Бренд: {safe(offer.get('producer'))}\n"
         f"Цена: <b>{safe(offer.get('sell_price'))} {safe(offer.get('currency', 'руб'))}</b>\n"
         f"Наличие: {safe(offer.get('rest'))}\n"
-        f"Срок: {safe(delivery)}\n"
-        f"Склад/поставщик: {safe(stock)}"
+        f"Срок: {safe(delivery)}"
     )
 
 
@@ -222,6 +226,118 @@ def buy_offer(call):
     )
 
 
+def ai_consent_keyboard() -> types.InlineKeyboardMarkup:
+    keyboard = types.InlineKeyboardMarkup()
+    keyboard.row(
+        types.InlineKeyboardButton("Согласен, включить ИИ", callback_data="ai_consent:yes"),
+        types.InlineKeyboardButton("Без ИИ", callback_data="ai_consent:no"),
+    )
+    return keyboard
+
+
+def request_ai_consent(chat_id: int) -> None:
+    bot.send_message(
+        chat_id,
+        "Для ответа ИИ текст сообщения, VIN и отправленные фотографии будут передаваться "
+        "во внешний сервис OdiRouter. Не отправляйте паспортные данные, банковские данные "
+        "и другую информацию, не относящуюся к подбору запчасти.\n\n"
+        "Вы согласны включить ИИ-менеджера?",
+        reply_markup=ai_consent_keyboard(),
+    )
+
+
+@bot.message_handler(
+    func=lambda message: (message.text or "").strip() == "Подключить ИИ-менеджера"
+)
+def enable_ai_prompt(message):
+    if not ai_is_enabled():
+        bot.send_message(
+            message.chat.id,
+            "ИИ-менеджер пока не настроен. Оставьте заявку, и вам ответит менеджер.",
+            reply_markup=main_keyboard(),
+        )
+        return
+    request_ai_consent(message.chat.id)
+
+
+@bot.callback_query_handler(func=lambda call: (call.data or "").startswith("ai_consent:"))
+def handle_ai_consent(call):
+    choice = (call.data or "").split(":", 1)[1]
+    if choice == "yes":
+        AI_CONSENT.add(call.message.chat.id)
+        bot.answer_callback_query(call.id, "ИИ-менеджер включён")
+        bot.send_message(
+            call.message.chat.id,
+            "ИИ-менеджер включён. Опишите нужную деталь или пришлите фото VIN/маркировки.",
+            reply_markup=main_keyboard(),
+        )
+        return
+
+    AI_CONSENT.discard(call.message.chat.id)
+    AI_CONVERSATIONS.pop(call.message.chat.id, None)
+    bot.answer_callback_query(call.id, "Работаем без ИИ")
+    bot.send_message(
+        call.message.chat.id,
+        "Хорошо, данные во внешний ИИ не передаются. Используйте проверку по OEM "
+        "или оставьте заявку менеджеру.",
+        reply_markup=main_keyboard(),
+    )
+
+
+def reply_with_ai(message, text: str, image_bytes: bytes | None = None) -> bool:
+    if not ai_is_enabled() or message.chat.id not in AI_CONSENT:
+        return False
+
+    history = AI_CONVERSATIONS.get(message.chat.id, [])
+    answer = ask_ai(text=text, history=history, image_bytes=image_bytes)
+    if not answer:
+        return False
+
+    clean_text = (text or "[фотография]").strip()
+    history.extend(
+        [
+            {"role": "user", "content": clean_text},
+            {"role": "assistant", "content": answer},
+        ]
+    )
+    AI_CONVERSATIONS[message.chat.id] = history[-6:]
+    bot.send_message(message.chat.id, safe(answer), reply_markup=main_keyboard())
+    return True
+
+
+@bot.message_handler(content_types=["photo"])
+def handle_photo(message):
+    if message.chat.id not in AI_CONSENT:
+        request_ai_consent(message.chat.id)
+        return
+
+    try:
+        photo = message.photo[-1]
+        file_info = bot.get_file(photo.file_id)
+        image_bytes = bot.download_file(file_info.file_path)
+    except Exception as exc:
+        print(f"Telegram photo download failed: {exc}", flush=True)
+        bot.send_message(
+            message.chat.id,
+            "Не удалось прочитать фотографию. Пришлите VIN или номер детали текстом.",
+            reply_markup=main_keyboard(),
+        )
+        return
+
+    prompt = (message.caption or "").strip() or (
+        "Распознай VIN или маркировку детали на фотографии. "
+        "Повтори распознанное значение и попроси клиента подтвердить его."
+    )
+    if reply_with_ai(message, prompt, image_bytes=image_bytes):
+        return
+
+    bot.send_message(
+        message.chat.id,
+        "ИИ для фотографий временно недоступен. Пришлите VIN или номер детали текстом.",
+        reply_markup=main_keyboard(),
+    )
+
+
 @bot.message_handler(func=lambda message: True)
 def handle(message):
     text = (message.text or "").strip()
@@ -238,6 +354,13 @@ def handle(message):
     if codes:
         for code in codes[:3]:
             send_offers(message, code)
+        return
+
+    if message.chat.id in AI_CONSENT and reply_with_ai(message, text):
+        return
+
+    if ai_is_enabled() and message.chat.id not in AI_CONSENT:
+        request_ai_consent(message.chat.id)
         return
 
     bot.send_message(

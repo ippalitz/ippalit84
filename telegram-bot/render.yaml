@@ -31,3 +31,13 @@ services:
         sync: false
       - key: GOOGLE_SERVICE_ACCOUNT_JSON
         sync: false
+      - key: ODIROUTER_API_KEY
+        sync: false
+      - key: ODIROUTER_BASE_URL
+        value: https://api.odirouter.ai/v1
+      - key: ODIROUTER_MODEL
+        sync: false
+      - key: ODIROUTER_TIMEOUT
+        value: "45"
+      - key: ODIROUTER_MAX_TOKENS
+        value: "350"
